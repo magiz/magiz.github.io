@@ -19,7 +19,22 @@ $comment = $torrent->comment();
 $piece_length = $torrent->piece_length();
 $size =$torrent->size( 2 );
 $hash_info=$torrent->hash_info();
-//var_dump( $torrent->content() );
+$files = $torrent->content();
+function build_tree($path_list) {
+    $path_tree = array();
+    foreach ($path_list as $path => $title) {
+        $list = explode('\\', trim($path, '\\'));
+        $last_dir = &$path_tree;
+        foreach ($list as $dir) {
+            $last_dir =& $last_dir[$dir];
+        }
+        $last_dir = $title;
+    }
+    return $path_tree;
+}
+$tree = build_tree($files);
+$tle = array_keys($tree)[0];
+$tree = build_tree($files)[$tle];
 
 ?>
 <!DOCTYPE html>
@@ -29,7 +44,7 @@ $hash_info=$torrent->hash_info();
     <meta http-equiv="Content-Style-Type" content="text/css"/>
     <meta name="description" content="Download <?php echo $title ?> torrent or any other torrent from Windows category. Direct download via HTTP available as well."/>
     <title>Download <?php echo $title ?> Torrent - SeedTorrent</title>
-    <link rel="stylesheet" type="text/css" href="/all.css" charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="//magiz.github.io/all.css" charset="utf-8" />
     <link rel="shortcut icon" href="//magiz.github.io/images/favicon.ico" />
     
 
@@ -180,33 +195,58 @@ Added on Jan 30, 2015 by <span class="badgeInline"><span class="offline" title="
 			
 				<hr class="tabsSeparator" />
                 <div id="tab-main" class="contentTabContainer">
-                 
-                                                    
-                                    									<div class="torrent_files">	<span class="folderopen"><span class="foldericon"></span><a href="#" onclick="Toggle('ul_top', this);return false;" title="<?php echo $title ?>" class="dotted"><?php echo $title ?></a> (Size: <?php echo $size ?>)</span>
-	<div id="torrent_files">
-			<table id="ul_top" class="torrentFileList" cellpadding="0" cellspacing="0" width="100%" >
+<div class="torrent_files">
+<span class="folderopen">
+<span class="foldericon"></span>
+<a href="#" onclick="Toggle('ul_top', this);return false;" title="<?php echo $title ?>" class="dotted"><?php echo $title ?></a> (Size: <?php echo $size ?>)
+</span>
+<div id="torrent_files">
+	<table id="ul_top" class="torrentFileList" cellpadding="0" cellspacing="0" width="100%" >
+	<?php 
+	ksort($tree);
+	$i = 0;
+function formatBytes($bytes, $precision = 2) { 
+    $units = array('B', 'KB', 'MB', 'GB', 'TB'); 
 
-																					<tr >
+    $bytes = max($bytes, 0); 
+    $pow = floor(($bytes ? log($bytes) : 0) / log(1024)); 
+    $pow = min($pow, count($units) - 1); 
+    $bytes /= pow(1024, $pow);
+    // $bytes /= (1 << (10 * $pow)); 
+
+    return round($bytes, $precision) . ' <span>' . $units[$pow] . '</span>'; 
+}
+function flask($tree){
+	global $i;
+	foreach($tree as $name => $value){
+	$i++;
+	if(is_array($value)){ ?>
+<tr class="innerFolder">
+<td class="torTree">&nbsp;</td>
+	<td colspan="4" class="novertpad">
+		<span class="folder">
+		<span class="foldericon"></span>
+		<a href="#" onclick="Toggle('ul_<?php echo $i ?>', this);return false;"><?php echo $name ?></a>
+		</span>
+		<table id="ul_<?php echo $i ?>" style="display: none;" width="100%" cellpadding="0" cellspacing="0">
+		<tbody>
+		<?php flask($value); ?>
+		</tbody>
+		</table>
+	</td>
+</tr>
+<?php }else{	?>
+		<tr >
 			<td class="torTree">&nbsp;</td>
-			<td class="torFileIcon"><span class="torType zipType"></span></td>
-			<td class="torFileName" title="Torrent Pro v3.4.2 build v38397 Incl. Crack [TechTools.net].rar">Torrent Pro v3.4.2 build v38397 Incl. Crack [TechTools.net].rar</td>
-			<td class="torFileSize">3.34 <span>MB</span></td>
+			<td class="torFileIcon"><span class="torType unknownType"></span></td>
+			<td class="torFileName" title="<?php echo $name ?>"><?php echo $name ?></td>
+			<td class="torFileSize"><?php echo formatBytes($value) ?></td>
 		</tr>
-							<tr >
-			<td class="torTree">&nbsp;</td>
-			<td class="torFileIcon"><span class="torType pictureType"></span></td>
-			<td class="torFileName" title="TechTools.NET.jpg">TechTools.NET.jpg</td>
-			<td class="torFileSize">1.74 <span>MB</span></td>
-		</tr>
-							<tr  class="last">
-			<td class="torTree">&nbsp;</td>
-			<td class="torFileIcon"><span class="torType txtType"></span></td>
-			<td class="torFileName" title="wWw.TechTools.NET.txt">wWw.TechTools.NET.txt</td>
-			<td class="torFileSize">37 <span>bytes</span></td>
-		</tr>
-				
-					</table>
-		</div>
+<?php }}}
+flask($tree);
+?>
+	</table>
+</div>
 </div>
 
                 					<div class="data">
